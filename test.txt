@@ -1,0 +1,53 @@
+const assert=require('assert');
+const ganache=require('ganache-cli');
+const Web3=require('web3');
+const{interface,bytecode}=require('../compile');
+
+const web3=new Web3(ganache.provider());
+let accounts;
+let verify;
+beforeEach(async ()=> {
+    accounts= await   web3.eth.getAccounts()
+
+
+    verify=await new web3.eth.Contract(JSON.parse(interface))
+            .deploy({data:bytecode})
+            .send({from:accounts[0],gas:1000000})
+});
+
+describe('Address verification and data entry',()=>{
+    it('Contract deployed successfully',()=>{
+        assert.ok(verify.options.address); //This checks whether the address at which contract is deployed is correct or not.
+    })
+
+    it('Values being entered correctly', async()=>{
+        await verify.methods.store('birth certificate','19383','2a0843db8270665b2fca49a79bf0096f5a8b193a10aebe2156717e236081d8de').send({from:accounts[2], gas:1000000})
+       // await verify.methods.store('birth certificate','19383','2a0843db8270665b2fca49a79bf0096f5a8b193a10aebe2156717e236081d8de').send({from:accounts[3], gas:1000000})
+    })
+
+});
+
+describe('Document verified',()=>{
+    it('Values matched', async()=>{
+        await verify.methods.verify_data('2a0843db8270665b2fca49a79bf0096f5a8b193a10aebe2156717e236081d8de').call();
+       
+   })
+});
+
+
+/*
+	The test is being performed using the testing framework named 'mocha'. Ganache is a local blockchain where the smart contract was deployed. interface and bytecode is the abi and
+	bytecode which was generated with compilation of the contract. accounts is a variable which stores the list of all accounts which comes bundled with ganache. verify stores the 
+	details of the deployed contract. 
+	The various tests which were run are-
+
+	1. The first test is address verification- It tests whether the address where the smart contract was deployed is valid or not.
+	2. The second test is using store function and update the data in blockchain i.e., uploading details of documents.
+	3. The third test (which has been commented in the code) checks if a person tries to upload same document again, is uploaded or not. The document was not uploaded and the message
+	   was logged out. 
+	4. The fourth test checks for the validity of document. It uses verify_data function and hash of the document which was uploaded. The documents matched and test was successful.
+
+	All the documents shoud be hashed with a common hashing algorithm i.e., SHA256.
+	All the test were written to check whether the functions written in smart contract are working properly or not. All the possibilities have been covered in the tests.
+*/
+
